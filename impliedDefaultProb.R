@@ -107,7 +107,7 @@ impliedDefaultProb <- R6::R6Class(
           ) > 0)
           r[]
         })
-
+      
       # government bond spot yield curve
       GCAMCPUB::f_msg("read risk free spot yield...")
       gbSpotYield <-
