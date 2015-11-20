@@ -126,7 +126,7 @@ impliedDefaultProb <- R6::R6Class(
     },
     val = function(lamda, k, cf, rf, rv) {
       sum(
-        ((1 + rf) ^ -k) * exp(-k * lamda) * (cf + rv * 100 * (exp(k * lamda) - 1))
+        ((1 + rf) ^ -k) * exp(-k * lamda) * (cf + rv * 100 * (exp(lamda) - 1))
       )
     },
     calcRaw = function(price, k, cf, rf, rv) {
