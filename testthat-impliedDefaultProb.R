@@ -22,26 +22,24 @@ r <- DBI::dbGetQuery(db_mo, sql) %>% dplyr::mutate(Date = GCAMCPUB::to_date(Date
 res <- defProb$calc(r$Date, r$Sec_Code, 0.3)
 res_na <- res[is.na(ImpliedDefaultProb)]
 
-# there are no WindCodes in bond universe
+## there are no WindCodes in bond universe ##
 res_wind <- defProb$data$univ[res_na[is.na(InnerCode), WindCode]]
 
 ## other reasons ##
 
-#liquidity
+# liquidity
 
 res_liquidity <- res_na[!is.na(InnerCode) & Liquidity == 1]
 
-#
+# others
 
-res_na[!is.na(InnerCode) & is.na(Liquidity)]
+res_remain <- res_na[!is.na(InnerCode) & is.na(Liquidity)]
 
-
+## test the amount ##
+res_non_na <- res[!is.na(ImpliedDefaultProb)]
 
 
 
 DBI::dbDisconnect(db_mo)
 
 
-
-# tmp test
-defProb$calc(as.Date("2014-10-21"), "1480526.IB", 0.4)
