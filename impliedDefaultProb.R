@@ -79,9 +79,11 @@ impliedDefaultProb <- R6::R6Class(
             dplyr::mutate(ListedDate = GCAMCPUB::to_date(ListedDate)) %>%
             data.table::setDT(key = c("SecuCode", "SecuMarket"))
           r <-
-            private$mktSuffix[r, on = "SecuMarket"][
-              , c("WindCode", "CodeSuffix") :=
-                list(paste0(SecuCode, CodeSuffix), NULL)][]
+            private$mktSuffix[r, on = "SecuMarket"]
+          stopifnot(unique(r$CodeSuffix) %in% private$mktSuffix$CodeSuffix)
+          r <- r[
+            , c("WindCode", "CodeSuffix") :=
+              list(paste0(SecuCode, CodeSuffix), NULL)][]
           setkey(r, WindCode)
           r[]
         })
@@ -153,15 +155,19 @@ impliedDefaultProb <- R6::R6Class(
       bondVal <- self$readVal(r$EndDate, r$InnerCode)
       r <- bondVal[r, on = c("InnerCode", "EndDate"), roll = TRUE]
       # prepare
-      r[, ImpliedDefaultProb := NA_real_]
+      r[, c("ImpliedDefaultProb", "Liquidity") := c(NA_real_, NA_real_)]
       for (i in seq_len(nrow(r))) {
         price <- r[i, ValueFullPrice]
         if (is.na(price)) next
         # cash flow
         cf <- self$data$bondCF[r[i, .(InnerCode)], .(PaymentDate, CashFlow), nomatch = 0]
+        cf <- cf[PaymentDate >= r[i, EndDate]]
         if (nrow(cf) == 0) next
         # k
         k <- as.integer(cf$PaymentDate - r[i, EndDate]) / 365
+        if (all(k < 1)) {
+          data.table::set(r, i, "Liquidity", 1)
+        }
         # risk free spot yield
         rf <- self$calRFR(r[i, EndDate], k)
         if (anyNA(rf)) next
@@ -205,7 +211,7 @@ impliedDefaultProb <- R6::R6Class(
     },
     calRFR = function(date, k) {
       stopifnot(length(date) == 1, lubridate::is.Date(date),
-                is.numeric(k), length(k) > 1)
+                is.numeric(k), length(k) >= 1)
       rf <- self$data$gbSpotYield[J(date), .(YearsToMaturity, Yield),
                                   roll = TRUE, nomatch = 0]
       tryCatch(
