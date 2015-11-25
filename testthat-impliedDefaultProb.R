@@ -18,8 +18,9 @@ db_mo <- GCAMCPUB::activate_conn(db_mo)
 sql <- "select distinct Date, Sec_Code, Sec_Name from CORE_Data_Holding
 where Date = '2015-11-10' and if_Standard_Bond = 1 and if_Riskfree = 0"
 r <- DBI::dbGetQuery(db_mo, sql) %>% dplyr::mutate(Date = GCAMCPUB::to_date(Date))
-
 res <- defProb$calc(r$Date, r$Sec_Code, 0.3)
+
+### na in res ###
 res_na <- res[is.na(ImpliedDefaultProb)]
 
 ## there are no WindCodes in bond universe ##
@@ -31,7 +32,7 @@ res_wind <- defProb$data$univ[res_na[is.na(InnerCode), WindCode]]
 
 res_liquidity <- res_na[!is.na(InnerCode) & Liquidity == 1]
 
-# others
+# others(in fact, maturity dates of these bonds are also in 2016-11)
 
 res_remain <- res_na[!is.na(InnerCode) & is.na(Liquidity)]
 
